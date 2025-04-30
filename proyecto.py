@@ -1,4 +1,4 @@
-from google import genai
+
 import google.generativeai as genai2
 import glob
 import pandas as pd
@@ -16,6 +16,37 @@ def embed_fn(title, text):
                              content=text,
                              task_type="retrieval_document",
                              title=title)['embedding']
+
+def query(query_text, dataframe):
+    """
+    Process a query and return the best matching passage along with additional information.
+    
+    Args:
+        query_text (str): The user's query text
+        dataframe (DataFrame): DataFrame containing document embeddings
+        
+    Returns:
+        dict: Dictionary containing the best matching text, page number, and similarity score
+    """
+    query_embedding = genai2.embed_content(model=model,
+                                        content=query_text,
+                                        task_type="retrieval_query")['embedding']
+    
+    # Calculate similarity scores using dot product
+    dot_products = np.dot(np.stack(dataframe['Embeddings'].tolist()), query_embedding)
+    
+    # Get index of best match
+    best_idx = np.argmax(dot_products)
+    best_score = dot_products[best_idx]
+    
+    # Get information about the best match
+    best_match = {
+        'page': dataframe.iloc[best_idx]['Page'],
+        'text': dataframe.iloc[best_idx]['Text'],
+        'score': float(best_score)
+    }
+    
+    return best_match
 
 if __name__ == "__main__":
 
@@ -76,30 +107,12 @@ if __name__ == "__main__":
                 if user_input != 'yes':
                     break
                 query_text = input("Enter your query: ")
-                best_passage = find_best_passage(query_text, df_pages)
+                best_passage = query(query_text, df_pages)
                 print("\nBest matching passage:")
                 print("-" * 80)
-                print(best_passage)
+                print(f"Page: {best_passage['page']}")
+                print(f"Text: {best_passage['text']}")
+                print(f"Score: {best_passage['score']}")
                 print("-" * 80)
     else:
         print("No PDF files found in current directory")
-
-
-def query(query_text, dataframe):
-    """
-    Process a query and return the best matching passage.
-    """
-    return find_best_passage(query_text, dataframe)
-    
-
-def find_best_passage(query, dataframe):
-    """
-    Compute the distances between the query and each document in the dataframe
-    using the dot product.
-    """
-    query_embedding = genai2.embed_content(model=model,
-                                        content=query,
-                                        task_type="retrieval_query")['embedding']
-    dot_products = np.dot(np.stack(dataframe['Embeddings'].tolist()), query_embedding)
-    idx = np.argmax(dot_products)
-    return dataframe.iloc[idx]['Text'] # Return text from index with max value

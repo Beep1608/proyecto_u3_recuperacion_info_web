@@ -38,7 +38,7 @@ def _clean_text(text):
 
 def _preprocess_text(text):
     """
-    Preprocess text by converting to lowercase and removing stopwords.
+    Preprocess text by converting to lowercase without removing stopwords.
     
     Args:
         text (str): The text to preprocess
@@ -52,14 +52,8 @@ def _preprocess_text(text):
     # Tokenize the text
     tokens = word_tokenize(text)
     
-    # Get English stopwords
-    stop_words = set(stopwords.words('english'))
-    
-    # Remove stopwords
-    filtered_tokens = [word for word in tokens if word.lower() not in stop_words]
-    
-    # Join tokens back into text
-    processed_text = ' '.join(filtered_tokens)
+    # Join tokens back into text (keeping all words including stopwords)
+    processed_text = ' '.join(tokens)
     
     return processed_text
 
@@ -100,7 +94,7 @@ def get_all_pages_content(pdf_path, skip_pages=0):
                         print(f"Page {i+1} appears to contain only binary data - skipping")
                         continue
                     
-                    # Preprocess the text (lowercase and remove stopwords)
+                    # Preprocess the text (lowercase and keep stopwords)
                     processed_text = _preprocess_text(cleaned_text)
                     
                     # Store the processed page content
@@ -117,3 +111,29 @@ def get_all_pages_content(pdf_path, skip_pages=0):
     except Exception as e:
         print(f"Error processing PDF: {e}")
         return {}
+
+
+def preprocess_text(text):
+    """
+    Preprocess text by converting to lowercase and removing stopwords.
+    
+    Args:
+        text (str): The text to preprocess
+        
+    Returns:
+        str: Preprocessed text
+    """
+    # Convert to lowercase
+    text = text.lower()
+    
+    # Tokenize the text
+    tokens = word_tokenize(text)
+    
+    # Remove stopwords
+    stop_words = set(stopwords.words('english'))
+    filtered_tokens = [word for word in tokens if word not in stop_words]
+    
+    # Join tokens back into text
+    processed_text = ' '.join(filtered_tokens)
+    
+    return processed_text
